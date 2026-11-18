@@ -1,111 +1,131 @@
 ---
 name: portfolio-case-study
-description: Turn a finished design project into a portfolio case study that matches the portfolio it is going on. Two modes - LEARN reads an existing portfolio (URL or exported pages) and writes down its house rules once; BUILD takes a folder of images, optional Figma URLs, and raw notes or a voice-note transcript, and produces a ready-to-post case study in that house style for the target platform (Cargo, Framer, Webflow, Squarespace, Notion, Markdown/static HTML). Use when someone wants to write up a project, add a project to their portfolio, clear a case-study backlog, or set up a repeatable case-study format.
+description: Find finished design projects on disk and in Figma, write them up as portfolio case studies in the portfolio's own house style, and deploy them to the user's site - Framer (Server API), Webflow (Data API), a custom/static or Claude-built site (repo edit + build + push), Cargo (browser-assisted), or paste-ready for anything else. Use when someone wants to add a project to their portfolio, write up a finished project, clear a case-study backlog, find projects they never published, set up a repeatable case-study format, or publish a case study to their website.
 ---
 
 # Portfolio case study
 
-The point: explain the format once, then every new project starts where the last
-one ended. The rules live in a file next to the project, not in a prompt someone
-has to remember.
-
-Two modes. Run LEARN once per portfolio. Run BUILD once per project.
+Explain the format once; every new project starts where the last one ended. The
+rules live in a file next to the work, not in a prompt someone has to remember.
 
 ```
-LEARN   existing portfolio  ──►  house-rules.md
-BUILD   images + Figma + notes + house-rules.md  ──►  case study + upload list
+DISCOVER  folders + Figma         -> candidate projects   (user picks)
+LEARN     existing portfolio      -> house-rules.md       (once per portfolio)
+BUILD     project + house rules   -> case.json + images   (platform-neutral)
+DEPLOY    case.json               -> the user's site      (staged, user approves going live)
 ```
 
-If `house-rules.md` does not exist yet, BUILD must run LEARN first. Never build
-from defaults silently.
+Run whichever stages are needed. A user with a folder in hand skips DISCOVER. A
+user with `house-rules.md` skips LEARN. BUILD never runs without house rules: if
+there are none, run LEARN first, or say plainly that you are using defaults.
+
+Work directory per project: `<portfolio root>/case-studies/<slug>/` holding
+`case.json`, `images/` and `assets.json`. Ask if there is no obvious root.
 
 ---
 
-## LEARN — write down the rules the portfolio already follows
+## DISCOVER - find the projects
 
-**Find the rules file location first.** Default: `./house-rules.md` in the
-project root. If the user already has one anywhere, use it and skip to BUILD.
+1. **Folders.** `python scripts/find_projects.py [roots...]` ranks folders that look
+   like design projects (images + source files + Figma links + process PDFs) and
+   lists any Figma links found in text files inside them. Default roots: Desktop,
+   Documents, Downloads, Pictures. If the user names a place, scan only that.
+2. **Figma.** In order of preference:
+   - links found by `find_projects.py` or given by the user;
+   - `FIGMA_TOKEN=... python scripts/figma_list.py <team_id> --match <words>` if the
+     user has a token with `projects:read` (often unavailable; a 403 is expected);
+   - ask the user for the URLs.
+   Check each link with the Figma MCP `get_metadata` before relying on it.
+3. **Present a short list**: path, image count, source files, Figma links, last
+   modified. The user picks. Do not open, read or describe folders they did not
+   pick. Scans surface personal folders too; keep the list to likely projects and
+   never comment on the rest.
 
-Inputs, any one of:
-- the portfolio URL (preferred — read it with the browser tools)
-- exported pages / screenshots / a template the user wants to remix
-- nothing — then interview the user, and say clearly the rules are invented, not learned
+## LEARN - write down the house rules
 
-Procedure: follow `references/learning-rules.md`. It covers what to measure on
-the live site (structure, word counts, image counts, markup), how to read the
-voice, and how to separate *rules* from *accidents*.
+Inputs, any one: the live portfolio URL (preferred), exported pages/screenshots,
+a template to remix, or an interview (then say the rules are invented, not learned).
 
-Output: fill `templates/house-rules.template.md` and save it as `house-rules.md`.
-Show the user the rules and the **inconsistencies you found** before saving —
-they decide whether a deviation is a rule or a mistake.
+Follow `references/learning-rules.md`. Fill `templates/house-rules.template.md`,
+save as `<portfolio root>/house-rules.md`. Before saving, show the user the rules
+**and the inconsistencies you found**; they decide what is a rule and what is a
+mistake, and whether to keep the current voice or an improved one.
 
----
+Also record the **platform** and how case studies are stored there (CMS collection
+and field names, repo content folder and frontmatter, or block markup). DEPLOY
+reads this.
 
-## BUILD — make one case study
+## BUILD - make one case study
 
-### Inputs (ask for anything missing; do not guess)
+Inputs (ask for anything missing, never guess):
+- the project folder; Figma URLs (optional); a supporting link (optional);
+- **notes**: raw is right. A pasted voice-note transcript is ideal: who the client
+  was, what they asked for, what changed and why. Do not ask the user to tidy it.
 
-1. **Image folder** — absolute path, must exist.
-2. **Figma URLs** — optional. Cloud links only.
-3. **Notes** — raw is correct. A pasted voice-note transcript is ideal: who the
-   client was, what they asked for, what changed and why. Do not ask the user to
-   clean it up; that is this skill's job.
-4. **Supporting link** — optional (process PDF, live site, Behance, Instagram).
+Steps:
+1. Load `house-rules.md`.
+2. `python scripts/collect_assets.py <folder> --columns <N> [--platform cargo]
+   --out <work>/assets.json`. Reorder for the story (lead image, context, process,
+   detail, final application) by editing each item's `order`; drop images that do
+   not belong.
+3. Read Figma: `get_metadata` for the page/frame tree, `get_screenshot` on the
+   frames that matter, `get_design_context` only for exact values worth writing
+   about. Figma explains what was designed; the folder supplies the images.
+4. Extract the story before writing: client and problem, constraint, what you
+   did, what you rejected and why, what shipped, evidence. Mark gaps. Ask about
+   gaps that matter; leave the rest out.
+5. Write to house rules; `references/writing-rules.md` covers anything they don't.
+6. `python scripts/prepare_images.py <work>/assets.json <work>/images --prefix <slug>`
+   (downscales, strips EXIF/GPS, numbers files in display order).
+7. Write `<work>/case.json` per `references/case-schema.md`.
+8. Show the user the copy, the image order, and any gaps or rules you broke on
+   purpose. Revise until they are happy, then DEPLOY.
 
-### Steps
+## DEPLOY - put it on the site
 
-1. **Load `house-rules.md`.** Everything below defers to it.
-2. **Inventory images.** Run
-   `python scripts/collect_assets.py <folder> --columns <N from house rules>`.
-   Gets dimensions, flags heavy files, proposes a height-balanced grid. The order
-   it proposes is by filename — reorder for the story (lead image → context →
-   process → detail → final application).
-3. **Read Figma, if given.** `get_metadata` first for the frame/page tree, then
-   `get_screenshot` on the frames that matter, `get_design_context` only when you
-   need exact values to write about. Figma tells you *what was designed and how it
-   is organised*; the image folder is still the image source.
-4. **Extract the story from the notes.** Before writing a word, list:
-   client & problem · constraint · what you did · what you rejected and why ·
-   what shipped · evidence it worked. Mark anything not in the notes as missing.
-   Ask about the missing items if they matter; otherwise leave them out.
-5. **Write.** House rules first, then `references/writing-rules.md` for anything
-   the house rules do not cover.
-6. **Emit for the platform.** See `references/platforms.md`.
-7. **Hand off**, in this order:
-   - image upload order (numbered filenames, with any `[!heavy]` files called out)
-   - the case study, paste-ready for the platform
-   - open questions / things you were unsure about — said plainly
-   - any rule you broke on purpose, and why
+Follow `references/deploy.md` for the platform recorded in house rules. Every
+adapter climbs the same ladder: prepare -> draft -> preview the user sees ->
+**user says yes** -> live.
 
-### Improving the skill
+- Custom / static / Claude-built site: edit the repo, build, preview locally,
+  then commit and push on a yes.
+- Framer: `scripts/framer/deploy.mjs` (dry run, draft, preview, production).
+- Webflow: Data API, staged item, publish on a yes.
+- Cargo and builders without an API: browser-assisted in the user's signed-in
+  Chrome, or paste-ready output with an upload order.
 
-When the user corrects the output ("captions never end with a full stop", "lead
-with the outcome, not the client"), offer to write the correction into
-`house-rules.md`. That is the whole advantage over prompting from scratch: fix a
-rule once and it stays fixed.
+## Getting better over time
+
+When the user corrects output ("captions never end with a full stop", "lead with
+the outcome"), offer to add it to `house-rules.md` under the corrections log. Fix
+it once and it stays fixed.
 
 ---
 
 ## Gotchas
 
-- **No made-up facts.** No metrics, quotes, timelines, team sizes, or results
-  that are not in the notes. A case study with an invented number is worse than
-  one without a number.
-- **Learning ≠ copying mistakes.** Existing portfolios contain typos, one-off
-  layouts, and weak copy. LEARN captures them as *observed*, and the user decides
-  what becomes a rule. Do not encode a typo as house style.
-- **Hosted builders mint their own image IDs.** Cargo (`media-item hash`),
-  Webflow, Squarespace and Framer assign asset IDs on upload. Never fabricate one.
-  Emit placeholders + an upload order; the user drags images in.
-- **Most builders have no write API for page content.** The last step is usually
-  paste-and-upload by the user, or driving the editor through the browser while
-  the user is signed in. Never sign in on their behalf. Do not promise one-click.
-- **Figma access is per account.** A Figma link that opens in the user's browser
-  can still 403 for the API — the `?t=` share token does not authorize the MCP.
-  Fix: link sharing → "Anyone with the link · can view", or reconnect the Figma
-  MCP to the account that owns the file. Fallback: exported frames in the folder.
-- **`.fig` files are not readable offline.** Always ask for the cloud URL.
-- **Check it is the user's work.** If the file or folder is named for another
-  studio or looks like a template/community file, ask before writing it up.
-- **Heavy images.** Builders usually serve originals. Anything over ~4000px or
-  ~4MB should be downscaled before upload; the script flags these.
+- **Going live is the user's call, every time.** Publishing, deploying to
+  production, pushing to a branch that auto-deploys, and pressing Publish in a
+  builder all need an explicit yes in chat for this specific case study.
+- **Secrets stay in the environment.** `FRAMER_API_KEY`, `WEBFLOW_TOKEN`,
+  `FIGMA_TOKEN` are set by the user; never ask for them in chat, print them, or
+  write them into files that could be committed.
+- **Never sign in for the user.** Browser-assisted deploys start with the user
+  already signed in.
+- **No made-up facts.** No metrics, quotes, timelines, team sizes or results that
+  are not in the notes.
+- **Learning is not copying mistakes.** Typos, one-off layouts and weak copy go in
+  "Observed issues", not in the rules.
+- **Builders mint their own image IDs** (Cargo `media-item hash`, Webflow/Framer
+  asset IDs). Upload through the builder or its API; never fabricate an ID.
+- **Figma access is per account.** A link that opens in the user's browser can
+  still 403 for the MCP; the `?t=` share token does not authorize the API. Fix:
+  share as "Anyone with the link: can view", or connect the MCP to the owning
+  account. Fallback: exported frames in the folder.
+- **`.fig` files cannot be read offline.** Ask for the cloud URL.
+- **Check it is the user's work.** Files named for another studio, templates and
+  community files: ask before writing them up.
+- **Ship prepared images only.** Originals are often 8000px+ and carry GPS data;
+  `prepare_images.py` fixes both. Never upload from the original folder.
+- **Discovery output is private.** Folder names can reveal unrelated personal
+  material. Show only likely projects; don't open or describe anything unpicked.

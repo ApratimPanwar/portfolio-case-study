@@ -1,11 +1,14 @@
 {
   "name": "portfolio-case-study",
-  "owner": { "name": "Apratim Panwar", "url": "https://github.com/ApratimPanwar" },
+  "owner": {
+    "name": "Apratim Panwar",
+    "url": "https://github.com/ApratimPanwar"
+  },
   "plugins": [
     {
       "name": "portfolio-case-study",
       "source": "./",
-      "description": "Learn your portfolio's house style once, then turn any finished project into a ready-to-post case study."
+      "description": "Find unpublished design projects, write them up in your house style, and deploy them to your site."
     }
   ]
 }

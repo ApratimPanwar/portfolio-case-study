@@ -4,3 +4,7 @@ assets.json
 house-rules.md
 .DS_Store
 Thumbs.db
+node_modules/
+package-lock.json
+case-studies/
+.env

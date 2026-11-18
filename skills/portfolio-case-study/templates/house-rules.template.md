@@ -48,6 +48,17 @@ Banned words: …
 <verbatim block skeleton or CMS field list>
 ```
 
+## Deploy target
+
+- Platform: <framer | webflow | static | cargo | squarespace | other>
+- Framer: project URL <...>, collection "<name>", field map <field -> case key, or "auto">
+- Webflow: site <...>, collection id <...>, field slugs <...>
+- Static / custom: repo <path>, content folder <...>, frontmatter keys <...>,
+  image folder <...>, listing updated by <collection | hand-edited file>,
+  build <cmd>, deploys from <branch> via <host>
+- Cargo / builders: page <...>, block markup in "Markup / fields" above
+- Who presses publish: <user | Claude after an explicit yes>
+
 ## Reference example
 
 <the strongest case study, in full — the one future runs imitate>

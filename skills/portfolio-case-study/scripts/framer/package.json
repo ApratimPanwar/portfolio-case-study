@@ -1,0 +1,7 @@
+{
+  "name": "portfolio-case-study-framer-deploy",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "dependencies": { "framer-api": "^5.1.0" }
+}

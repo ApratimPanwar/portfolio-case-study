@@ -1,36 +1,52 @@
 # portfolio-case-study
 
-A [Claude Code](https://claude.com/claude-code) skill that turns finished design
-projects into portfolio case studies, written in your portfolio's own house style.
+A [Claude Code](https://claude.com/claude-code) skill that finds the design
+projects you never published, writes them up in your portfolio's own house style,
+and puts them on your site.
 
-There's always one project that never makes it onto the portfolio. It's finished
-and shipped, and it sits in a folder. This skill writes down your case-study
-format once, so each new write-up starts where the last one ended.
+There's always one project that never makes it onto the portfolio. It's finished,
+shipped, paid for, and it sits in a folder. This skill writes down your case-study
+format once, so every new write-up starts where the last one ended, and gets it
+the rest of the way onto the site.
 
 ## How it works
 
 ```
-LEARN   your existing portfolio  ──►  house-rules.md          (once)
-BUILD   images + Figma + notes + house-rules.md  ──►  case study   (per project)
+DISCOVER  folders + Figma         ->  candidate projects   (you pick)
+LEARN     your existing portfolio ->  house-rules.md       (once)
+BUILD     project + house rules   ->  case.json + images   (per project)
+DEPLOY    case.json               ->  your site            (draft -> preview -> you say go)
 ```
 
-**LEARN** reads your live portfolio (or exported pages) and records the rules it
-actually follows: structure, word counts, image grid, title pattern and voice,
-with real quotes as do/don't examples. It shows you the inconsistencies it finds
-so you decide what's a rule and what's a mistake.
+**DISCOVER** scans your folders for things that look like projects: images,
+source files (`.psd`, `.ai`, `.indd`, `.sketch`…), process PDFs, and Figma links
+mentioned in notes. It ranks them and you pick one. With a Figma token it can also
+list your team's Figma files.
 
-**BUILD** takes:
-- a folder of project images
-- Figma links (optional)
-- rough notes. A raw voice-note transcript is ideal: who the client was, what
-  they asked for, what changed and why.
+**LEARN** reads your live portfolio and records the rules it actually follows:
+structure, word counts, image grid, title pattern and voice, with real quotes as
+do/don't examples. It shows you the inconsistencies it found, so you decide what's
+a rule and what's a mistake. It also records where case studies live on your
+platform (CMS collection, repo folder, block markup).
 
-It gives you back:
-- the image upload order, with oversized files flagged
-- the case study, ready to paste into your platform
-- the questions it couldn't answer from your notes
+**BUILD** takes the project folder, Figma links and your rough notes. A raw
+voice-note transcript is ideal: who the client was, what they asked for, what
+changed and why. It writes the case study in your voice, orders the images for the
+story, and makes web-ready copies (downscaled, GPS/EXIF stripped). The result is a
+platform-neutral `case.json`. It doesn't make up metrics, quotes or results.
 
-It doesn't make up metrics, quotes or results.
+**DEPLOY** sends `case.json` to your site:
+
+| Platform | How | What's automated |
+|---|---|---|
+| Custom / static / Claude-built site (Astro, Next, Hugo, 11ty, Jekyll, HTML) | edits your repo, builds, previews, pushes | everything; you approve the push |
+| Framer | [Framer Server API](https://www.framer.com/developers/server-api-introduction) script | images, CMS item, preview; you approve production |
+| Webflow | Webflow Data API v2 | staged CMS item; you approve publishing |
+| Cargo | drives the editor in your signed-in Chrome | uploads + layout; you press Publish |
+| Squarespace, Wix, Notion, Behance… | paste-ready content + image order | the writing |
+
+Nothing goes live without your explicit yes. Every route goes draft → preview →
+your approval → live.
 
 When you correct something, it offers to write the correction into
 `house-rules.md`, so the fix sticks for every future case study.
@@ -44,13 +60,19 @@ In Claude Code:
 /plugin install portfolio-case-study@portfolio-case-study
 ```
 
-Or copy `skills/portfolio-case-study/` into `~/.claude/skills/` (all projects)
-or `.claude/skills/` (one project).
+Or copy `skills/portfolio-case-study/` into `~/.claude/skills/`.
 
-The image script needs Python 3 and Pillow: `pip install pillow`.
+Requirements:
+- Python 3 with Pillow: `pip install pillow`
+- For Framer: Node 22+, then `npm install` in `skills/portfolio-case-study/scripts/framer/`
+- For Figma: the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559) connected in Claude Code
+- For Cargo/browser-assisted deploys: [Claude in Chrome](https://claude.com/chrome)
 
 ## Use
 
+```
+Find projects on my Desktop I haven't put on my portfolio
+```
 ```
 Learn the house style from https://your-portfolio.com
 ```
@@ -58,34 +80,44 @@ Learn the house style from https://your-portfolio.com
 Make a case study from ~/Projects/acme-rebrand, Figma: <url>.
 Notes: <paste your voice-note transcript>
 ```
+```
+Deploy it to my Framer site
+```
 
-## Platforms
+## Keys and tokens
 
-| Platform | What you get | Last step |
+Set these in your own environment. The skill never asks for them in chat and
+never writes them to files.
+
+| Variable | For | Where to get it |
 |---|---|---|
-| Cargo | Block HTML with gallery slots | Drag images in, paste HTML |
-| Framer | Values for each CMS field | Upload images to the CMS item |
-| Webflow | Values for each CMS field, rich text as HTML | Paste fields, upload images |
-| Squarespace | Text for each block, in page order | Build the blocks |
-| Notion | Markdown | Paste, drag images in |
-| Static sites (Astro, Next, Hugo…) | Markdown file + images in your repo | Nothing. Claude can finish it |
+| `FRAMER_API_KEY` | Framer deploys | Framer → Site Settings → General → API keys |
+| `WEBFLOW_TOKEN` | Webflow deploys | Webflow → Site settings → Apps & integrations → API access (CMS read/write) |
+| `FIGMA_TOKEN` | listing Figma files (optional) | Figma → Settings → Security → Personal access tokens (`projects:read`) |
 
-Most hosted builders don't let outside tools write page content, and they assign
-their own image IDs on upload. So the skill hands you paste-ready content and an
-upload order instead of claiming to publish for you.
+## Scripts
 
-## Figma
+All in `skills/portfolio-case-study/scripts/`. They work on their own too.
 
-Uses the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559)
-if it's connected. The connected account must be able to open the file. A share
-link that opens in your browser can still be refused. If so, set link sharing to
-"Anyone with the link · can view", or export the frames into the image folder.
+| Script | Does |
+|---|---|
+| `find_projects.py [roots]` | rank folders that look like design projects; collect Figma links in them |
+| `figma_list.py <team_id>` | list Figma files in a team (needs `FIGMA_TOKEN`) |
+| `collect_assets.py <folder>` | inventory images, flag oversized files, propose a grid |
+| `prepare_images.py <assets.json> <out>` | downscale, strip EXIF/GPS, number in display order |
+| `framer/deploy.mjs <case.json>` | dry run → draft → preview → production, one flag per stage |
+
+## Figma access
+
+The connected Figma account must be able to open the file. A share link that
+opens in your browser can still be refused to the API. If so, set link sharing to
+"Anyone with the link · can view", or export the frames into the project folder.
 
 ## Credit
 
 Inspired by [@0xCharlota's thread](https://x.com/0xCharlota/status/2105590462622871841)
-on turning a case-study format into a reusable Framer Skill. This is a
-platform-independent take on the same idea for Claude Code.
+on turning a case-study format into a reusable Framer Skill. This takes the same
+idea across platforms for Claude Code.
 
 ## License
 

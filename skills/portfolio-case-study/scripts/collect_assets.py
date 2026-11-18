@@ -16,6 +16,8 @@ try:
 except ImportError:
     sys.exit("Pillow required:  pip install pillow")
 
+Image.MAX_IMAGE_PIXELS = 600_000_000   # user's own files; process boards can be huge
+
 IMG = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".tif", ".tiff", ".bmp", ".avif"}
 VID = {".mp4", ".mov", ".webm", ".m4v"}
 MAX_PX = 4000
