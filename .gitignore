@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+assets.json
+house-rules.md
+.DS_Store
+Thumbs.db

@@ -1,0 +1,10 @@
+{
+  "name": "portfolio-case-study",
+  "version": "1.0.0",
+  "description": "Turn finished design projects into portfolio case studies in your own house style. Learns the rules from your existing portfolio once, then builds each new case study from an image folder, Figma links and rough notes.",
+  "author": { "name": "Apratim Panwar", "url": "https://github.com/ApratimPanwar" },
+  "homepage": "https://github.com/ApratimPanwar/portfolio-case-study",
+  "repository": "https://github.com/ApratimPanwar/portfolio-case-study",
+  "license": "MIT",
+  "keywords": ["portfolio", "case-study", "design", "figma", "cargo", "framer", "webflow"]
+}
