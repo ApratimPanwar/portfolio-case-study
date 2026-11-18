@@ -2,8 +2,11 @@
 """Inventory a project image folder and propose a masonry layout.
 
 Usage:
-    python collect_assets.py <folder> [--columns 3] [--platform generic|cargo]
-                                      [--wide 1.6] [--out assets.json]
+    python collect_assets.py <folder> [more folders...] [--columns 3]
+                             [--platform generic|cargo] [--wide 1.6] [--out assets.json]
+
+Several folders are merged in the order given, e.g. the project folder plus the
+artboard PNGs from extract_ai.py.
 
 Writes assets.json (default: inside the folder) and prints a review table.
 Layout is height-balanced only; reorder for narrative before using it.
@@ -35,6 +38,8 @@ def human(n):
 def scan(folder: Path):
     items = []
     for p in sorted(folder.rglob("*"), key=lambda q: str(q).lower()):
+        if p.name == "assets.json":
+            continue
         if not p.is_file() or p.name.startswith("."):
             continue
         ext = p.suffix.lower()
@@ -85,7 +90,7 @@ def assign(items, cols, wide, platform):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("folder", type=Path)
+    ap.add_argument("folders", type=Path, nargs="+")
     ap.add_argument("--columns", type=int, default=3)
     ap.add_argument("--platform", choices=["generic", "cargo"], default="generic")
     ap.add_argument("--wide", type=float, default=1.6,
@@ -93,21 +98,26 @@ def main():
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
 
-    if not a.folder.is_dir():
-        sys.exit(f"not a directory: {a.folder}")
+    for f in a.folders:
+        if not f.is_dir():
+            sys.exit(f"not a directory: {f}")
     if a.columns < 1:
         sys.exit("--columns must be >= 1")
 
-    items = assign(scan(a.folder), a.columns, a.wide, a.platform)
+    found = []
+    for f in a.folders:
+        found += scan(f)
+    items = assign(found, a.columns, a.wide, a.platform)
+    label = ", ".join(str(f) for f in a.folders)
     if not items:
-        sys.exit(f"no images or video found under {a.folder}")
+        sys.exit(f"no images or video found under {label}")
 
-    out = Path(a.out) if a.out else a.folder / "assets.json"
-    out.write_text(json.dumps({"folder": str(a.folder), "columns": a.columns,
+    out = Path(a.out) if a.out else a.folders[0] / "assets.json"
+    out.write_text(json.dumps({"folders": [str(f) for f in a.folders], "columns": a.columns,
                                "platform": a.platform, "count": len(items),
                                "items": items}, indent=2), encoding="utf-8")
 
-    print(f"\n{len(items)} asset(s) in {a.folder}  |  {a.columns} col  |  {a.platform}\n")
+    print(f"\n{len(items)} asset(s) in {label}  |  {a.columns} col  |  {a.platform}\n")
     print(f"{'#':>3}  {'file':<34} {'dims':>11} {'asp':>5} {'size':>7}  placement")
     print("-" * 88)
     for i, it in enumerate(items, 1):

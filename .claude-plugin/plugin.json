@@ -1,7 +1,7 @@
 {
   "name": "portfolio-case-study",
-  "version": "2.0.0",
-  "description": "Find finished design projects on disk and in Figma, write them up as case studies in your portfolio's own house style, and deploy them to Framer, Webflow, a custom/static site or Cargo. Learns your format once from your existing portfolio.",
+  "version": "2.1.0",
+  "description": "Find finished design projects on disk, in Figma and in Illustrator files, write them up as case studies in your portfolio's own house style, and deploy them to Framer, Webflow, a custom/static site or Cargo. Learns your format once from your existing portfolio.",
   "author": {
     "name": "Apratim Panwar",
     "url": "https://github.com/ApratimPanwar"
@@ -14,6 +14,7 @@
     "case-study",
     "design",
     "figma",
+    "illustrator",
     "framer",
     "webflow",
     "cargo",

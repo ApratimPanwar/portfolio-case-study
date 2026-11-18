@@ -29,7 +29,11 @@ do/don't examples. It shows you the inconsistencies it found, so you decide what
 a rule and what's a mistake. It also records where case studies live on your
 platform (CMS collection, repo folder, block markup).
 
-**BUILD** takes the project folder, Figma links and your rough notes. A raw
+**BUILD** takes the project folder, Figma links and your rough notes. If the
+finished artwork lives in Illustrator files, it pulls every artboard out as an
+image (sized for the web whether it's a 70mm label or a 700mm poster), along with
+the text, print sizes and, with Illustrator installed, artboard names, fonts and
+linked-file status. A raw
 voice-note transcript is ideal: who the client was, what they asked for, what
 changed and why. It writes the case study in your voice, orders the images for the
 story, and makes web-ready copies (downscaled, GPS/EXIF stripped). The result is a
@@ -63,7 +67,9 @@ In Claude Code:
 Or copy `skills/portfolio-case-study/` into `~/.claude/skills/`.
 
 Requirements:
-- Python 3 with Pillow: `pip install pillow`
+- Python 3 with Pillow and pypdf: `pip install pillow pypdf`
+- For Illustrator files: [poppler](https://poppler.freedesktop.org/) (`pdftoppm`) or `pip install pymupdf`.
+  Optional: Adobe Illustrator, for artboard names, fonts and link checks (Windows script included; macOS command documented)
 - For Framer: Node 22+, then `npm install` in `skills/portfolio-case-study/scripts/framer/`
 - For Figma: the [Figma MCP server](https://help.figma.com/hc/en-us/articles/32132100833559) connected in Claude Code
 - For Cargo/browser-assisted deploys: [Claude in Chrome](https://claude.com/chrome)
@@ -103,7 +109,9 @@ All in `skills/portfolio-case-study/scripts/`. They work on their own too.
 |---|---|
 | `find_projects.py [roots]` | rank folders that look like design projects; collect Figma links in them |
 | `figma_list.py <team_id>` | list Figma files in a team (needs `FIGMA_TOKEN`) |
-| `collect_assets.py <folder>` | inventory images, flag oversized files, propose a grid |
+| `extract_ai.py <file.ai or folder> <out>` | artboards to PNG, print sizes, text; flags files that need Illustrator |
+| `illustrator/run_illustrator.ps1` | drive Illustrator: artboard names, layers, fonts, spot colours, broken links, exports |
+| `collect_assets.py <folders...>` | inventory images, flag oversized files, propose a grid |
 | `prepare_images.py <assets.json> <out>` | downscale, strip EXIF/GPS, number in display order |
 | `framer/deploy.mjs <case.json>` | dry run → draft → preview → production, one flag per stage |
 

@@ -1,6 +1,6 @@
 ---
 name: portfolio-case-study
-description: Find finished design projects on disk and in Figma, write them up as portfolio case studies in the portfolio's own house style, and deploy them to the user's site - Framer (Server API), Webflow (Data API), a custom/static or Claude-built site (repo edit + build + push), Cargo (browser-assisted), or paste-ready for anything else. Use when someone wants to add a project to their portfolio, write up a finished project, clear a case-study backlog, find projects they never published, set up a repeatable case-study format, or publish a case study to their website.
+description: Find finished design projects on disk and in Figma, pull artwork out of Illustrator (.ai) source files, write them up as portfolio case studies in the portfolio's own house style, and deploy them to the user's site - Framer (Server API), Webflow (Data API), a custom/static or Claude-built site (repo edit + build + push), Cargo (browser-assisted), or paste-ready for anything else. Use when someone wants to add a project to their portfolio, write up a finished project, clear a case-study backlog, find projects they never published, set up a repeatable case-study format, or publish a case study to their website.
 ---
 
 # Portfolio case study
@@ -64,21 +64,28 @@ Inputs (ask for anything missing, never guess):
 
 Steps:
 1. Load `house-rules.md`.
-2. `python scripts/collect_assets.py <folder> --columns <N> [--platform cargo]
-   --out <work>/assets.json`. Reorder for the story (lead image, context, process,
-   detail, final application) by editing each item's `order`; drop images that do
-   not belong.
-3. Read Figma: `get_metadata` for the page/frame tree, `get_screenshot` on the
+2. **Source files.** If the folder has `.ai` files, pull the artboards out
+   (`references/source-files.md`): ask which version is the shipped one, then
+   `python scripts/extract_ai.py <file.ai> <work>/source`. Use the Illustrator
+   route (`scripts/illustrator/`) if a file was saved without PDF content, or
+   when artboard names, fonts or link status matter. Tell the user first; it
+   opens Illustrator.
+3. `python scripts/collect_assets.py <folder> [<work>/source] --columns <N>
+   [--platform cargo] --out <work>/assets.json`. Reorder for the story (lead
+   image, context, process, detail, final application) by editing each item's
+   `order`; drop images that do not belong (drafts, dielines, duplicates).
+4. Read Figma: `get_metadata` for the page/frame tree, `get_screenshot` on the
    frames that matter, `get_design_context` only for exact values worth writing
    about. Figma explains what was designed; the folder supplies the images.
-4. Extract the story before writing: client and problem, constraint, what you
+5. Extract the story before writing: client and problem, constraint, what you
    did, what you rejected and why, what shipped, evidence. Mark gaps. Ask about
-   gaps that matter; leave the rest out.
-5. Write to house rules; `references/writing-rules.md` covers anything they don't.
-6. `python scripts/prepare_images.py <work>/assets.json <work>/images --prefix <slug>`
+   gaps that matter; leave the rest out. Source files add facts (variant count,
+   formats, typefaces), not story.
+6. Write to house rules; `references/writing-rules.md` covers anything they don't.
+7. `python scripts/prepare_images.py <work>/assets.json <work>/images --prefix <slug>`
    (downscales, strips EXIF/GPS, numbers files in display order).
-7. Write `<work>/case.json` per `references/case-schema.md`.
-8. Show the user the copy, the image order, and any gaps or rules you broke on
+8. Write `<work>/case.json` per `references/case-schema.md`.
+9. Show the user the copy, the image order, and any gaps or rules you broke on
    purpose. Revise until they are happy, then DEPLOY.
 
 ## DEPLOY - put it on the site
@@ -123,6 +130,14 @@ it once and it stays fixed.
   share as "Anyone with the link: can view", or connect the MCP to the owning
   account. Fallback: exported frames in the folder.
 - **`.fig` files cannot be read offline.** Ask for the cloud URL.
+- **`.ai` files are not all artwork.** Some are SVGs renamed `.ai`; some were
+  saved without PDF content and show only Illustrator's placeholder page. Use
+  `extract_ai.py`'s verdict, not the extension.
+- **Driving Illustrator is visible and slow-ish.** It opens on the user's
+  screen. Say so before running it, and never save over their files.
+- **Source files carry private details.** Packaging and print text often holds
+  phone numbers, emails, addresses and licence numbers. Use extracted text to
+  understand the project; never paste those details into a case study.
 - **Check it is the user's work.** Files named for another studio, templates and
   community files: ask before writing them up.
 - **Ship prepared images only.** Originals are often 8000px+ and carry GPS data;
